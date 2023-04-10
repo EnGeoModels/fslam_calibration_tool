@@ -192,12 +192,12 @@ fslam_fit <- function(x){
                                          
                                          # SF post antecedent recharge
                                          D_ini = tan(slope)/(1-(ha_filter/z)*(dw/ds)),
-                                         SF_mean_ini = (tanphi/D_ini + C/A),
+                                         SF_mean_ini = (tanphi_m/D_ini + C/A),
                                          SF_sd_ini = sqrt(tanphi_sd^2/D_ini^2+(Cr_sd^2+Cs_sd^2)/A^2), # in paper
                                          
                                          # SF post event
                                          D_fin = tan(slope)/(1-(h/z)*(dw/ds)),
-                                         SF_mean_fin = (tanphi/D_fin + C/A),
+                                         SF_mean_fin = (tanphi_m/D_fin + C/A),
                                          SF_sd_fin = sqrt(tanphi_sd^2/D_fin^2+(Cr_sd^2+Cs_sd^2)/A^2), # in paper
                                          
                                          # Landslide prediction (Safe Factor)
