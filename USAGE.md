@@ -65,6 +65,14 @@ Each data folder includes three files:
 - `soil.csv`: soil-type properties.
 - `hmtu.csv`: land-cover/use properties and curve numbers.
 
+### Choosing `MORLE_input_data` Or `noMORLE_input_data`
+
+In most calibration runs, use `MORLE_input_data`. This folder represents the normal calibration case, where the dataset includes observed landslide occurrence points. These observations are what allow the tool to compare model predictions against known landslide behavior and adjust parameters meaningfully.
+
+Use `noMORLE_input_data` only for specific no-landslide scenarios. This folder is useful when you need to test or evaluate conditions where no landslides were observed, check model behavior over stable areas, or run a control scenario. It should not be the default choice for calibration because it does not provide the same observed landslide signal used to tune the model.
+
+As a practical rule: start with `MORLE_input_data` unless your objective is explicitly to analyze a no-landslide/control area.
+
 ## Input Data
 
 ### Terrain Points
@@ -96,6 +104,8 @@ The `soil.csv` and `hmtu.csv` files include a units row immediately after the he
 Open the project from the root folder, meaning the folder that contains `nsga2_FSLAM_v1.R`, `MORLE_input_data`, and `noMORLE_input_data`.
 
 At the beginning of the script, check that the input paths point to the dataset you want to use. By default, the script is configured to use `MORLE_input_data`.
+
+Keep that default for standard calibration runs. Change the paths to `noMORLE_input_data` only when you intentionally want to run the specific no-landslide/control scenario described above.
 
 If you want to calibrate with your own data, replace the sample files or update the paths in the script to point to your data folder. Keep the same column names and expected units.
 
