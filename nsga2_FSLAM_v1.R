@@ -4,12 +4,9 @@
 
 library(sf)
 library(dplyr)
-library(cvms)
 library(caret)
 library(nsga2R)
 library(plotly)
-library(psych)
-library(pROC)
 
 # Fixed parameters
 g <- 9.81 # gravity (m/s^2)
@@ -20,12 +17,15 @@ ds <- 2000 # soil density (Kg/m^3)
 #x <- c(Cs,Cr,phi_min,phi_max,Pa,z,Pe,k,por,CN)
 
 # Input data for landslide (MORLE) and no-landslide (no-MORLE) conditions
-points <- read.csv('.../MORLE_input_data/points_sample.csv')
-soil <- read.csv('.../MORLE_input_data/soil.csv')
-hmtu <- read.csv('.../MORLE_input_data/hmtu.csv')
+points <- read.csv('MORLE_input_data/points_sample.csv')
+soil <- read.csv('MORLE_input_data/soil.csv')
+hmtu <- read.csv('MORLE_input_data/hmtu.csv')
 
-lower_b <-  c(0.5,0.5,-5,-5,0,1,1,1,-0.3,1) # Parameter Lower boundaries 
-upper_b <-  c(5,5,0,0,1,4.5,1,1,0,1) # Parameter Upper boundaries 
+lower_b <-  c(0.5,0.5,-5,-5,0,1,1,1,-0.3,1) # Parameter Lower boundaries
+upper_b <-  c(5,5,0,0,1,4.5,1,1,0,1) # Parameter Upper boundaries
+
+run_single_objective <- FALSE
+run_map <- FALSE
 
 # FSLAM function
 fslam <- function(x){
@@ -326,7 +326,7 @@ get_acc <- function(x){
 # Multi-objective calibration results
 ######################################
 
-results <- nsga2R(fn = fslam_fit, varNo = 10, objDim = 2, generations = 10, popSize = 100,  
+results <- nsga2R(fn = fslam_fit_multi, varNo = 10, objDim = 2, generations = 10, popSize = 100,
                   lowerBounds = lower_b, upperBounds = upper_b)
 
 
@@ -335,7 +335,7 @@ df <- data.frame(ID = 1:nrow(results$objectives),
                  acc_ini =  round(results$objectives[,1]*-1,3))
 
 # Plotting Pareto curve
-plot_ly(data = df, x = ~auc_ini,y = ~auc_fin)
+plot_ly(data = df, x = ~acc_ini, y = ~acc_fin)
 
 # Select best set of parameters by filteting objetive function
 
@@ -353,22 +353,32 @@ p <- data.frame(name = c('Cs','Cr','phi_min','phi_max','Pa','z','Pe','k','por','
                 initial = c(1,1,0,0,1,0,1,1,0,1),
                 min = lower_b,
                 max = upper_b)
-results <- dds(fn = fslam_fit_single, p, m = 100, r = 0.2, plot = T)
-print(results$f_best*-1) # Print optimal accuracy
-x <- results$p_best %>% round(3) # Optimal parameter set
-print(x)
+
+if(run_single_objective){
+  if(!exists("dds")){
+    stop("The dds() function is required for single-objective calibration.")
+  }
+
+  results <- dds(fn = fslam_fit_single, p, m = 100, r = 0.2, plot = T)
+  print(results$f_best*-1) # Print optimal accuracy
+  x <- results$p_best %>% round(3) # Optimal parameter set
+  print(x)
+}
 
 # Map visualization and accuracy
 
 fslam_map <- function(x,
                       #var,
                       crs,
-                      fun,
-                      export.shp = F, 
+                      export.shp = F,
                       path = NULL){
-  
+
   points_final <- fslam(x)
-  points_final <- points_final %>% drop_na()
+  points_final <- points_final %>% na.omit()
+
+  if(!requireNamespace("mapview", quietly = TRUE)){
+    stop("Package 'mapview' is required to display the interactive map.")
+  }
   
   # Convert data frame to sf object
   points_sf <- sf::st_as_sf(x = points_final, 
@@ -379,42 +389,42 @@ fslam_map <- function(x,
   
   #library(mapview)
   
-    mapviewOptions(fgb = FALSE)
-    map_fin <- mapview(points_sf, zcol = c('POF_fin_pred'), legend = T, alpha = 0, 
+    mapview::mapviewOptions(fgb = FALSE)
+    map_fin <- mapview::mapview(points_sf, zcol = c('POF_fin_pred'), legend = T, alpha = 0,
                        col.regions = c('blue','red'),
                        na.color = 'white',
                        layer.name = 'model prediction (PoF final)',
                        cex = 4)
-    map_ini <- mapview(points_sf, zcol = c('POF_ini_pred'), legend = T, alpha = 0, 
+    map_ini <- mapview::mapview(points_sf, zcol = c('POF_ini_pred'), legend = T, alpha = 0,
                        col.regions = c('blue','red'),
                        na.color = 'white',
                        layer.name = 'model prediction (PoF antecedent)',
                        cex = 4) 
     #print(map_ini+map_fin)
     
-    mapviewOptions(fgb = FALSE)
-    
-    map_ha <- mapview(points_sf, zcol = c('ratio_ha_h'), legend = T, alpha = 0, 
+    mapview::mapviewOptions(fgb = FALSE)
+
+    map_ha <- mapview::mapview(points_sf, zcol = c('ratio_ha_h'), legend = T, alpha = 0,
                       na.color = 'white',
                       layer.name = 'ha/h',
-                      cex = 4) 
-    map_he <- mapview(points_sf, zcol = c('ratio_he_h'), legend = T, alpha = 0, 
+                      cex = 4)
+    map_he <- mapview::mapview(points_sf, zcol = c('ratio_he_h'), legend = T, alpha = 0,
                       na.color = 'white',
                       layer.name = 'he/h',
-                      cex = 4) 
+                      cex = 4)
     
     #print(map_ha + map_he)
 
-    mapviewOptions(fgb = FALSE)
-    map_rha <- mapview(points_sf, zcol = c('ratio_ha_z'), legend = T, alpha = 0, 
+    mapview::mapviewOptions(fgb = FALSE)
+    map_rha <- mapview::mapview(points_sf, zcol = c('ratio_ha_z'), legend = T, alpha = 0,
                        na.color = 'white',
                        layer.name = 'ha/z',
-                       cex = 4) 
-    
-    map_rhe <- mapview(points_sf, zcol = c('ratio_he_z'), legend = T, alpha = 0, 
+                       cex = 4)
+
+    map_rhe <- mapview::mapview(points_sf, zcol = c('ratio_he_z'), legend = T, alpha = 0,
                        na.color = 'white',
                        layer.name = 'he/z',
-                       cex = 4) 
+                       cex = 4)
     
     print(map_ini + map_fin + map_ha + map_he + map_rha + map_rhe)
 
@@ -422,16 +432,13 @@ fslam_map <- function(x,
   acc <- get_acc(x)
   acc <- c(acc$stat_ini[2], acc$stat_fin[3])
   names(acc) <- c('Acc_pre_event','Acc_post_event')
-  
-  print(acc*-1)
-  
+
+  print(acc)
+
   if(export.shp == T){
-    
-    writeOGR(points_sf %>% as('Spatial'), dsn = path, 
-             layer = "points_result", 
-             driver = "ESRI Shapefile",
-             overwrite_layer = T)
-    
+
+    sf::st_write(points_sf, dsn = path, delete_layer = TRUE)
+
     #setwd(path)
     #write.csv(points_final, file = 'Final_Table.csv',row.names = F)
     
@@ -440,12 +447,18 @@ fslam_map <- function(x,
 } # Visualization tool
 
 
-# Choose row number (e.g. 1) to apply that parameter set 
-x <- df_s %>% slice(1) %>% as.numeric 
+# Choose row number (e.g. 1) to apply that parameter set
+if(nrow(df_s) > 0){
+  x <- df_s %>% slice(1) %>% select(Cs, Cr, phi_min, phi_max, Pa, z, Pe, k, por, CN) %>% as.numeric()
+} else {
+  stop("No calibrated parameter set meets the selected acc_fin and acc_ini thresholds.")
+}
 
 # Plot the interactive map
-fslam_map(x, 
-          crs = "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs", # set projection
-          export.shp = F, # shape file will be exported?
-          path = '.../best_calibrated.shp') # Indicate shapefile path to be saved, only if export.shp = T
+if(run_map){
+  fslam_map(x,
+            crs = "+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs", # set projection
+            export.shp = F, # shape file will be exported?
+            path = 'best_calibrated.shp') # Indicate shapefile path to be saved, only if export.shp = T
+}
 
