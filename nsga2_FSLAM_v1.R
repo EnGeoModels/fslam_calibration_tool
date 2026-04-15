@@ -7,6 +7,7 @@ library(dplyr)
 library(caret)
 library(nsga2R)
 library(plotly)
+library(mcu)
 
 # Fixed parameters
 g <- 9.81 # gravity (m/s^2)
@@ -355,11 +356,11 @@ p <- data.frame(name = c('Cs','Cr','phi_min','phi_max','Pa','z','Pe','k','por','
                 max = upper_b)
 
 if(run_single_objective){
-  if(!exists("dds")){
-    stop("The dds() function is required for single-objective calibration.")
+  if(!exists("dds", where = asNamespace("mcu"))){
+    stop("The mcu::dds() function is required for single-objective calibration.")
   }
 
-  results <- dds(fn = fslam_fit_single, p, m = 100, r = 0.2, plot = T)
+  results <- mcu::dds(fn = fslam_fit_single, p, m = 100, r = 0.2, plot = T)
   print(results$f_best*-1) # Print optimal accuracy
   x <- results$p_best %>% round(3) # Optimal parameter set
   print(x)

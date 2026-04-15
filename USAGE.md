@@ -20,9 +20,34 @@ After a calibration run, the tool provides:
 
 You need R installed. RStudio is recommended because it makes it easier to open the project, inspect tables, run the script by sections, and view interactive maps.
 
-The script uses R packages for spatial data handling, data manipulation, calibration, classification metrics, interactive plots, and maps. If R reports that a package is missing, install that package from the R console before continuing. The main packages are `sf`, `dplyr`, `caret`, `nsga2R`, `plotly`, and, for maps, `mapview`.
+The script uses R packages for spatial data handling, data manipulation, calibration, classification metrics, interactive plots, and maps. If R reports that a package is missing, install that package from the R console before continuing.
 
-The single-objective calibration option uses a function named `dds`. If you want to use that option, the function must already be available in your R environment. If it is not available, use the multi-objective calibration workflow, which is the main option in the script.
+The required libraries loaded by the script are:
+
+| Library | Source | Purpose in this tool |
+|---------|--------|----------------------|
+| `sf` | CRAN | Spatial objects and spatial export. |
+| `dplyr` | CRAN | Data manipulation, filtering, selection, and piping. |
+| `caret` | CRAN | Confusion matrices and classification accuracy metrics. |
+| `nsga2R` | CRAN | Multi-objective NSGA-II calibration. |
+| `plotly` | CRAN | Interactive Pareto plot. |
+| `mcu` | GitHub: `dkneis/mcu` | Single-objective DDS calibration through the `dds()` function. |
+
+The optional map visualization also uses:
+
+| Library | Source | Purpose in this tool |
+|---------|--------|----------------------|
+| `mapview` | CRAN | Interactive spatial map layers. |
+
+Most libraries come from CRAN and can be installed with R's standard package installer. The exception is `mcu`, which is hosted on GitHub. Install it with the `remotes` package from CRAN, then install `dkneis/mcu` from GitHub.
+
+Package sources:
+
+- CRAN packages: `https://cran.r-project.org/package=<package-name>`
+- `mcu` GitHub repository: `https://github.com/dkneis/mcu`
+- `mcu` documentation for `dds()`: `https://rdrr.io/github/dkneis/mcu/man/dds.html`
+
+The single-objective calibration option uses `dds()` from `mcu`. The function signature used by this script matches the `mcu` implementation: it receives an objective function, a parameter table with initial/min/max values, the maximum number of iterations, and the DDS perturbation parameter.
 
 By default, the script keeps the optional single-objective calibration and interactive map steps disabled. Enable those options inside the R file only when the required dependencies are installed and you want to run those stages.
 
@@ -168,7 +193,7 @@ Check that you are working from the project root folder and that the paths at th
 
 ### An R Package Is Missing
 
-Install the package named in the error message and run the script again. Map visualization requires `mapview`; NSGA-II calibration requires `nsga2R`.
+Install the package named in the error message and run the script again. NSGA-II calibration requires `nsga2R`, classification metrics require `caret`, and DDS calibration requires `mcu`. Map visualization requires `mapview`.
 
 ### The Filtered Table Is Empty
 
